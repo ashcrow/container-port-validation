@@ -47,7 +47,11 @@ def list_namespaces():
     response = subprocess.check_output(
         'oc get namespaces -o template --template=\'{{range .items}}{{.metadata.name}}{{"\\n"}}{{end}}\'',
         shell=True)
-    return response.split('\n')
+    namespaces = response.split('\n')
+    # Remove the last item if it is empty
+    if namespaces[-1] == '':
+        namespaces = namespaces[:-1]
+    return namespaces
 
 
 def list_items(kind, namespace):
@@ -58,7 +62,8 @@ def list_items(kind, namespace):
        - `kind`: Kind of item to access
        - `namespace`: Namespace to look in
     """
-    response = subprocess.check_output('oc get -o json %s' % kind, shell=True)
+    response = subprocess.check_output('oc get --namespace=%s -o json %s' % (
+        namespace, kind), shell=True)
     items = json.loads(response)
     return items.get("items", [])
 
