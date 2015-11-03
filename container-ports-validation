@@ -124,29 +124,16 @@ def main():
 
     # Where the magic happens
     for namespace in list_namespaces():
-        for rc in list_items('replicationcontrollers', namespace):
-            print_check("rc", rc["metadata"]["name"], namespace)
-            # for container in rc["spec"]["template"]["spec"]["containers"]:
-            for container in get(rc, "spec", "template", "spec", "containers"):
-                # for port in container["ports"]:
-                for port in get(container, "ports"):
-                    print(validate(port["name"]))
-
-        for pod in list_items('pods', namespace):
-            print_check("pod", rc["metadata"]["name"], namespace)
-            # for container in pod["spec"]["containers"]:
-            for conrainer in get(pod, "spec", "containers"):
-                # for port in container["ports"]:
-                for port in get(container, "ports"):
-                    print(validate(port["name"]))
-
-        for dc in list_items('deploymentconfigs', namespace):
-            print_check("dc", rc["metadata"]["name"], namespace)
-            # for container in dc["spec"]["template"]["spec"]["containers"]:
-            for container in get(dc, "spec", "template", "spec", "containers"):
-                # for port in container["ports"]:
-                for port in get(container, "ports"):
-                    print(validate(port["name"]))
+        for kind, path in [
+                ('replicationcontrollers', ("spec", "template", "spec", "containers")),
+                ('pods', ("spec", "containers")),
+                ('deploymentconfigs', ("spec", "template", "spec", "containers"))]:
+            for item in list_items(kind, namespace):
+                print_check(kind, rc["metadata"]["name"], namespace)
+                for container in get(item, *path):
+                    # for port in container["ports"]:
+                    for port in get(container, "ports"):
+                        print(validate(port["name"]))
 
 
 if __name__ == '__main__':
