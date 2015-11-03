@@ -46,13 +46,8 @@ end
 #
 # items = list_namespaces
 def list_namespaces
-    response = %x( oc get -o json namespaces)
-    item_list = JSON.parse response
-    items = []
-    item_list.each { |item|
-       items << item[:metadata][:name]
-    }
-    return items
+    response = %x( oc get namespaces -o template --template='{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+    return response.split('\n')
 end
 
 
