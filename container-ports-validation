@@ -60,14 +60,14 @@ end
 # ==== Examples
 #
 # items = list_items('pods', 'mynamespaces')
-def list_items(kind, namepsace)
+def list_items(kind, namespace)
     if namespace.to_s != ''
         response = %x( oc get --namespace=#{ namespace } -o json #{ kind })
     else
         response = %x( oc get -o json #{ kind })
     end
     items = JSON.parse response
-    return items[:items]
+    return items["items"]
 end
 
 # get_item returns one single item from the api
@@ -80,13 +80,24 @@ end
 # ==== Examples
 #
 # item = get_item('rc', 'myrc', 'mynamespace')
-def get_item(kind, name, namepsace)
+def get_item(kind, name, namespace)
     if namespace.to_s != ''
         response = %x( oc get --namespace=#{ namespace } -o json #{ kind } #{ name })
     else
         response = %x( oc get -o json #{ kind } #{ name })
     end
     return JSON.parse response
+end
+
+def get(obj, *path)
+    o = obj
+    for p in path
+        if o[p].nil?
+            return []
+        end
+        o = o[p]
+    end
+    return o
 end
 
 # main is the main entry point to this script
@@ -99,28 +110,38 @@ def main
     # Where the magic happens
     list_namespaces().each { |namespace|
         # TODO: Loop over daemonsets and templates too?
-        ['replicationcontrollers', 'pods'].each { |kind|
-           list_items(kind, namespace).each { |name|
-               resource = get_item(kind, name, namespace)
-               resource[:spec][:template][:spec][:containers].each { |container|
-                    container[:ports].each { |port|
-                        puts validate(port[:name])
-                    }
+        list_items('replicationcontrollers', namespace).each { |rc|
+            puts "Checking rc #{rc["metadata"]["name"]}"
+            #rc["spec"]["template"]["spec"]["containers"].each { |container|
+            get(rc, "spec", "template", "spec", "containers").each {|container|
+                #container["ports"].each { |port|
+                get(container, "ports").each {|port|
+                    puts validate(port["name"])
+                }
+            }
+        }
+        list_items('pods', namespace).each { |pod|
+            puts "Checking pod #{pod["metadata"]["name"]}"
+            #pod["spec"]["containers"].each { |container|
+            get(pod, "spec", "containers").each {|container|
+                #container["ports"].each { |port|
+                get(container, "ports").each {|port|
+                    puts validate(port["name"])
+                }
+            }
+        }
+        list_items('deploymentconfigs', namespace).each { |dc|
+            puts "Checking dc #{dc["metadata"]["name"]}"
+            #dc["spec"]["template"]["spec"]["containers"].each { |container|
+            get(dc, "spec", "template", "spec", "containers").each {|container|
+                #container["ports"].each { |port|
+                get(container, "ports").each {|port|
+                    puts validate(port["name"])
                 }
             }
         }
     }
 
-    # DeploymentConfigs are different
-    list_items('deploymentconfigs', nil).each { |items|
-        items.each { |dc|
-            dc[:spec][:template][:spec][:containers].each { |container|
-                container[:ports].each { |port|
-                    puts validate(port[:name])
-                }
-            }
-        }
-    }
 
 end
 
