@@ -1,9 +1,12 @@
 #!/usr/bin/env python
-#
-# Created to validate TODO _PUT_BZ_HERE_
-#
-# This script should not require any ruby libs other than what is in the
-# standard library
+"""
+Created to validate TODO _PUT_BZ_HERE_
+
+This script should not require any ruby libs other than what is in the
+standard library
+"""
+
+__license__ = "ASL 2.0"
 
 import json
 import subprocess
@@ -84,6 +87,30 @@ def get(obj, *path):
     return o
 
 
+def pretty_print_errors(errors):
+    """
+    Prints out results in human friendly way.
+
+    :Parameters:
+       - `errors`: List of errors
+    """
+    if errors:
+        for error in errors:
+            print("  - %s" % error)
+
+
+def print_check(kind, name, namespace):
+    """
+    Prints the checking notice to the user.
+
+    :Parameters:
+       - `kind`: The kind of the item being checked
+       - `name`: The name of the item being checked
+       - `namespace`: The namespace the item resides in
+    """
+    print("Checking %s %s in namespace %s" % (kind, name, namespace))
+
+
 def main():
     """
     main is the main entry point to this script
@@ -98,7 +125,7 @@ def main():
     # Where the magic happens
     for namespace in list_namespaces():
         for rc in list_items('replicationcontrollers', namespace):
-            print("Checking rc %s" % rc["metadata"]["name"])
+            print_check("rc", rc["metadata"]["name"], namespace)
             # for container in rc["spec"]["template"]["spec"]["containers"]:
             for container in get(rc, "spec", "template", "spec", "containers"):
                 # for port in container["ports"]:
@@ -106,7 +133,7 @@ def main():
                     print(validate(port["name"]))
 
         for pod in list_items('pods', namespace):
-            print("Checking pod %s" % pod["metadata"]["name"])
+            print_check("pod", rc["metadata"]["name"], namespace)
             # for container in pod["spec"]["containers"]:
             for conrainer in get(pod, "spec", "containers"):
                 # for port in container["ports"]:
@@ -114,7 +141,7 @@ def main():
                     print(validate(port["name"]))
 
         for dc in list_items('deploymentconfigs', namespace):
-            print("Checking dc %s" % dc["metadata"]["name"])
+            print_check("dc", rc["metadata"]["name"], namespace)
             # for container in dc["spec"]["template"]["spec"]["containers"]:
             for container in get(dc, "spec", "template", "spec", "containers"):
                 # for port in container["ports"]:
