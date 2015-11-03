@@ -67,7 +67,7 @@ end
 # items = list_items('pods', 'mynamespaces')
 def list_items(kind, namepsace)
     if namespace.to_s != ''
-        response = %x( oc get --namespace=#{ namespace }-o json #{ kind })
+        response = %x( oc get --namespace=#{ namespace } -o json #{ kind })
     else
         response = %x( oc get -o json #{ kind })
     end
@@ -87,9 +87,9 @@ end
 # item = get_item('rc', 'myrc', 'mynamespace')
 def get_item(kind, name, namepsace)
     if namespace.to_s != ''
-        response = %x( oc get --namespace=#{ namespace }-o json #{ kind })
+        response = %x( oc get --namespace=#{ namespace } -o json #{ kind } #{ name })
     else
-        response = %x( oc get -o json #{ kind } #{name})
+        response = %x( oc get -o json #{ kind } #{ name })
     end
     return JSON.parse response
 end
