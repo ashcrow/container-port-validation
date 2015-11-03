@@ -50,9 +50,9 @@ def list_namespaces
     item_list = JSON.parse response
     items = []
     item_list.each { |item|
-       item_list << item[:metadata][:name]
+       items << item[:metadata][:name]
     }
-    return item_list
+    return items
 end
 
 
