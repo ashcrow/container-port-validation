@@ -1,149 +1,121 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env python
 #
 # Created to validate TODO _PUT_BZ_HERE_
 #
 # This script should not require any ruby libs other than what is in the
 # standard library
 
-require 'json'
+import json
+import subprocess
+import re
 
 # The maximum length of container.ports.name
 ALLOWED_LENGTH = 14
 # The valid structure of container.ports.name
-ALLOWED_CHARS = Regexp.new('^[a-z0-9]{1}[a-z0-9\-]*[a-z0-9]{1}[^\-]?$')
+ALLOWED_CHARS = re.compile('^[a-z0-9]{1}[a-z0-9\-]*[a-z0-9]{1}[^\-]?$')
 
-# validate verifies that value matches required conventions
-#
-# Rules of container.ports.name validation:
-# * must be less that 15 chars
-# * at least one letter
-# * only a-z0-9-
-# * hyphens can not be leading or trailing or next to eachother
-#
-# ==== Attributes
-#
-# * +value+ - Value to validate
-#
-# ==== Examples
-#
-# errors = validate("idonoterror")
-# errors = validate("-ireturn1error")
-# errors = validate("-ireturn2errors")
-def validate(value)
+
+def validate(value):
+    """
+    validate verifies that value matches required conventions
+
+    Rules of container.ports.name validation:
+
+    * must be less that 15 chars
+    * at least one letter
+    * only a-z0-9-
+    * hyphens can not be leading or trailing or next to eachother
+
+    :Parameters:
+       - `value`: Value to validate
+    """
     errors = []
-    if value.length > ALLOWED_LENGTH
-        errors << "Value #{ value } is too long. Max size is #{ ALLOWED_LENGTH }"
-    end
-    if not ALLOWED_CHARS.match(value)
-        errors << "Value #{ value } does not match #{ ALLOWED_CHARS } "
-    end
+    if len(value) > ALLOWED_LENGTH:
+        errors.append("Value %s is too long. Max size is %s" % (
+            value, ALLOWED_LENGTH))
+
+    if not ALLOWED_CHARS.match(value):
+        errors.append("Value %s does not match %s" % (
+            value, ALLOWED_CHARS.pattern))
     return errors
-end
 
-# list_namespaces lists the namespaces names
-#
-# ==== Examples
-#
-# items = list_namespaces
-def list_namespaces
-    response = %x( oc get namespaces -o template --template='{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+
+def list_namespaces():
+    """
+    Returns a list of all namespaces
+    """
+    response = subprocess.check_output(
+        'oc get namespaces -o template --template=\'{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}\'',
+        shell=True)
     return response.split('\n')
-end
 
 
-# list_items returns a list of items from the api
-#
-# ==== Attributes
-#
-# * +kind+ - Kind of item to access
-# * +namespace+ - Namespace to look in
-# ==== Examples
-#
-# items = list_items('pods', 'mynamespaces')
-def list_items(kind, namespace)
-    if namespace.to_s != ''
-        response = %x( oc get --namespace=#{ namespace } -o json #{ kind })
-    else
-        response = %x( oc get -o json #{ kind })
-    end
-    items = JSON.parse response
-    return items["items"]
-end
+def list_items(kind, namespace):
+    """
+    list_items returns a list of items from the api
 
-# get_item returns one single item from the api
-#
-# ==== Attributes
-#
-# * +kind+ - Kind of item to access
-# * +name+ - Name of the item
-# * +namespace+ - Namespace to look in
-# ==== Examples
-#
-# item = get_item('rc', 'myrc', 'mynamespace')
-def get_item(kind, name, namespace)
-    if namespace.to_s != ''
-        response = %x( oc get --namespace=#{ namespace } -o json #{ kind } #{ name })
-    else
-        response = %x( oc get -o json #{ kind } #{ name })
-    end
-    return JSON.parse response
-end
+    :Parameters:
+       - `kind`: Kind of item to access
+       - `namespace`: Namespace to look in
+    """
+    response = subprocess.check_output('oc get -o json %s)' % kind, shell=True)
+    items = json.loads(response)
+    return items.get("items", [])
 
-def get(obj, *path)
+
+def get(obj, *path):
+    """
+    Gets an object
+
+    :Parameters:
+       - `obj`: A dictionary structure
+       - `path`: All other non-keyword arguments
+    """
     o = obj
-    for p in path
-        if o[p].nil?
+    for p in path:
+        if o.get(p, None) is None:
             return []
-        end
         o = o[p]
-    end
     return o
-end
 
-# main is the main entry point to this script
-def main
-    has_oc = system( 'oc whoami' )
-    if has_oc != true
-        puts 'Can not find oc in the PATH. Exiting...'
-        exit
-    end
+
+def main():
+    """
+    main is the main entry point to this script
+    """
+    try:
+        print("Checking for oc ...")
+        has_oc = subprocess.check_call('oc whoami', shell=True)
+    except:
+        print('Can not find oc in the PATH. Exiting...')
+        raise SystemExit(1)
+
     # Where the magic happens
-    list_namespaces().each { |namespace|
-        # TODO: Loop over daemonsets and templates too?
-        list_items('replicationcontrollers', namespace).each { |rc|
-            puts "Checking rc #{rc["metadata"]["name"]}"
-            #rc["spec"]["template"]["spec"]["containers"].each { |container|
-            get(rc, "spec", "template", "spec", "containers").each {|container|
-                #container["ports"].each { |port|
-                get(container, "ports").each {|port|
-                    puts validate(port["name"])
-                }
-            }
-        }
-        list_items('pods', namespace).each { |pod|
-            puts "Checking pod #{pod["metadata"]["name"]}"
-            #pod["spec"]["containers"].each { |container|
-            get(pod, "spec", "containers").each {|container|
-                #container["ports"].each { |port|
-                get(container, "ports").each {|port|
-                    puts validate(port["name"])
-                }
-            }
-        }
-        list_items('deploymentconfigs', namespace).each { |dc|
-            puts "Checking dc #{dc["metadata"]["name"]}"
-            #dc["spec"]["template"]["spec"]["containers"].each { |container|
-            get(dc, "spec", "template", "spec", "containers").each {|container|
-                #container["ports"].each { |port|
-                get(container, "ports").each {|port|
-                    puts validate(port["name"])
-                }
-            }
-        }
-    }
+    for namespace in list_namespaces():
+        for rc in list_items('replicationcontrollers', namespace):
+            print("Checking rc %s" % rc["metadata"]["name"])
+            # for container in rc["spec"]["template"]["spec"]["containers"]:
+            for container in get(rc, "spec", "template", "spec", "containers"):
+                # for port in container["ports"]:
+                for port in get(container, "ports"):
+                    print(validate(port["name"]))
+
+        for pod in list_items('pods', namespace):
+            print("Checking pod %s" % pod["metadata"]["name"])
+            # for container in pod["spec"]["containers"]:
+            for conrainer in get(pod, "spec", "containers"):
+                # for port in container["ports"]:
+                for port in get(container, "ports"):
+                    print(validate(port["name"]))
+
+        for dc in list_items('deploymentconfigs', namespace):
+            print("Checking dc %s" % dc["metadata"]["name"])
+            # for container in dc["spec"]["template"]["spec"]["containers"]:
+            for container in get(dc, "spec", "template", "spec", "containers"):
+                # for port in container["ports"]:
+                for port in get(container, "ports"):
+                    print(validate(port["name"]))
 
 
-end
-
-# Execute main function
-main
+if __name__ == '__main__':
+    main()
