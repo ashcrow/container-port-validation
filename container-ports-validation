@@ -1,0 +1,134 @@
+#!/usr/bin/env ruby
+#
+# Created to validate TODO _PUT_BZ_HERE_
+#
+# This script should not require any ruby libs other than what is in the
+# standard library
+
+require 'net/http'
+require 'json'
+require 'optparse'
+
+# The maximum length of container.ports.name
+ALLOWED_LENGTH = 14
+# The valid structure of container.ports.name
+ALLOWED_CHARS = Regexp.new('^[a-z0-9]{1}[a-z0-9\-]*[a-z0-9]{1}[^\-]?$')
+
+# validate verifies that value matches required conventions
+#
+# Rules of container.ports.name validation:
+# * must be less that 15 chars
+# * at least one letter
+# * only a-z0-9-
+# * hyphens can not be leading or trailing or next to eachother
+#
+# ==== Attributes
+#
+# * +value+ - Value to validate
+#
+# ==== Examples
+#
+# errors = validate("idonoterror")
+# errors = validate("-ireturn1error")
+# errors = validate("-ireturn2errors")
+def validate(value)
+    errors = []
+    if value.length > ALLOWED_LENGTH
+        errors << "Value #{ value } is too long. Max size is #{ ALLOWED_LENGTH }"
+    end
+    if not ALLOWED_CHARS.match(value)
+        errors << "Value #{ value } does not match #{ ALLOWED_CHARS } "
+    end
+    return errors
+end
+
+# list_items returns a list of items from the api
+#
+# ==== Attributes
+#
+# * +url+ - URL to access
+# * +username+ - Username for access
+# * +password+ - Password for access
+#
+# ==== Examples
+#
+# items = list_items('https://example.org:8080/api/v1/namespaces')
+def list_items(url, username, password)
+    uri = URI(url)
+    req = Net::HTTP::Get.new(uri)
+    req.basic_auth username, password
+    response = Net::HTTP.start(uri.hostname, uri.port) {|http|
+      http.request(req)
+    }
+    item_list = JSON.parse response
+    items = []
+    item_list.each { |item|
+       item_list << item[:metadata][:name]
+    }
+    return item_list
+
+end
+
+# get_item returns one single item from the api
+#
+# ==== Attributes
+#
+# * +url+ - URL to access
+# * +username+ - Username for access
+# * +password+ - Password for access
+#
+# ==== Examples
+#
+# item = get_item('https://example.org:8080/api/v1/namespace/mynamespace/pods/mypod')
+def get_item(url, username, password)
+    uri = URI(url)
+    req = Net::HTTP::Get.new(uri)
+    req.basic_auth username, password
+    response = Net::HTTP.start(uri.hostname, uri.port) {|http|
+      http.request(req)
+    }
+    return JSON.parse response
+end
+
+# main is the main entry point to this script
+def main
+    # default to help if there isn't anything passed in
+    ARGV << '-h' if ARGV.empty?
+    options = {}
+    op = OptionParser.new do |opts|
+        opts.on("-u", "--user [USERNAME]", String, "User to authenticate with") do |v|
+            options[:user] = v
+        end
+        opts.on("-a", "--api-server [APISERVER]", String, "API server to communicate with") do |v|
+            options[:apiserver] = v
+        end
+        opts.on("-h", "--help", "Show help") do
+            puts opts
+            exit
+        end
+    end
+    op.parse!
+
+    # TODO: Get password with showing it on cli
+    options[:password] = "TODO"
+
+    # Where the magic happens
+    namespaces = list_items(options[:apiserver] + '/api/v1/namespaces', options[:username], options[:password])
+    namespaces.each { |namespace|
+        # TODO: Loop over daemonsets and templates too?
+        ['replicationcontrollers', 'pods'].each { |kind|
+           url = options[:apiserver] + '/api/v1/' + '/' + namespace + '/' +  kind
+           list_items(url, options[:username], options[:password]).each { |name|
+               resource = get_item(url + '/' + name, options[:username], options[:password])
+                resource[:spec][:template][:spec][:containers].each { |container|
+                    container[:ports].each { |port|
+                        puts validate(port[:name])
+                    }
+                }
+            }
+        }
+    }
+end
+
+# Execute main function
+main
