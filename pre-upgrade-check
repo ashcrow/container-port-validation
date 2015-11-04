@@ -142,7 +142,10 @@ def main():
             for container in get(item, *path):
                 container_name = container["name"]
                 for port in get(container, "ports"):
-                    port_name = port["name"]
+                    port_name = port.get("name", None)
+                    if not port_name:
+                        # Unnamed ports are OK
+                        continue
                     valid = validate(port_name)
                     if not valid and first_error:
                         first_error = False
@@ -156,8 +159,9 @@ def main():
         namespace = item["metadata"]["namespace"]
         item_name = item["metadata"]["name"]
         for port in get(item, "spec", "ports"):
-            port_name = port["targetPort"]
-            if type(port_name) == int:
+            port_name = port.get("targetPort", None)
+            if type(port_name) == int or port_name is None:
+                # Integer only or unnamed ports are OK
                 continue
             valid = validate(port_name)
             if not valid and first_error:
