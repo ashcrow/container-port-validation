@@ -136,7 +136,7 @@ def main():
                 for container in get(item, *path):
                     # for port in container["ports"]:
                     for port in get(container, "ports"):
-                        print(validate(port["name"]))
+                        pretty_print_errors(validate(port["name"]))
 
 
 if __name__ == '__main__':
