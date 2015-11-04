@@ -92,10 +92,10 @@ def pretty_print_errors(namespace, kind, item_name, container_name, port_name, v
     """
     if not valid:
         if len(container_name) > 0:
-            print('Resource="%s/%s" Namespace="%s" Container="%s" Port="%s"' % (
+            print('%s/%s -n %s (Container="%s" Port="%s")' % (
                 kind, item_name, namespace, container_name, port_name))
         else:
-            print('Resource="%s/%s" Namespace="%s" Port="%s"' % (
+            print('%s/%s -n %s (Port="%s")' % (
                 kind, item_name, namespace, port_name))
 
 
