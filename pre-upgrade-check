@@ -159,7 +159,7 @@ def main():
             if type(port_name) == int:
                 continue
             valid = validate(port_name)
-            if valid and first_error:
+            if not valid and first_error:
                 first_error = False
                 print_validation_header()
             pretty_print_errors(
