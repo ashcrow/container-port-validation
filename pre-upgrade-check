@@ -166,6 +166,10 @@ def main():
             pretty_print_errors(
                 namespace, "services", item_name, "", port_name, valid)
 
+    # If we had at least 1 error then exit with 1
+    if not first_error:
+        raise SystemExit(1)
+
 
 if __name__ == '__main__':
     main()
