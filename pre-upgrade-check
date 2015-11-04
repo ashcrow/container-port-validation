@@ -142,13 +142,13 @@ def main():
                 container_name = container["name"]
                 for port in get(container, "ports"):
                     port_name = port["name"]
-                    errors = validate(port_name)
-                    if errors and first_error:
+                    valid = validate(port_name)
+                    if not valid and first_error:
                         first_error = False
                         print_validation_header()
                     pretty_print_errors(
                         namespace, kind, item_name,
-                        container_name, port_name, errors)
+                        container_name, port_name, valid)
 
     # Services follow a different flow
     for item in list_items('services'):
@@ -158,12 +158,12 @@ def main():
             port_name = port["targetPort"]
             if type(port_name) == int:
                 continue
-            errors = validate(port_name)
-            if errors and first_error:
+            valid = validate(port_name)
+            if valid and first_error:
                 first_error = False
                 print_validation_header()
             pretty_print_errors(
-                namespace, "services", item_name, "", port_name, errors)
+                namespace, "services", item_name, "", port_name, valid)
 
 
 if __name__ == '__main__':
