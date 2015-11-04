@@ -9,6 +9,7 @@ standard library
 __license__ = "ASL 2.0"
 
 import json
+import os
 import subprocess
 import re
 
@@ -123,7 +124,9 @@ def main():
     try:
         # the comma at the end suppresses the newline
         print("Checking for oc ..."),
-        has_oc = subprocess.check_output('oc whoami', shell=True)
+        # look at OS_PATH for the full path. Default ot 'oc'
+        has_oc = subprocess.check_output([
+            os.getenv('OS_PATH', 'oc'), 'whoami'])
         print("found")
     except:
         print('Can not find oc in the PATH. Exiting...')
