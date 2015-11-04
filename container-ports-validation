@@ -15,7 +15,7 @@ import re
 # The maximum length of container.ports.name
 ALLOWED_LENGTH = 14
 # The valid structure of container.ports.name
-ALLOWED_CHARS = re.compile('^[a-z0-9]{1}[a-z0-9\-]*[a-z0-9]{1}[^\-]?$')
+ALLOWED_CHARS = re.compile('^[a-z0-9][a-z0-9\-]*[a-z0-9]$')
 
 
 def validate(value):
@@ -36,6 +36,9 @@ def validate(value):
     if len(value) > ALLOWED_LENGTH:
         errors.append("Value %s is too long. Max size is %s" % (
             value, ALLOWED_LENGTH))
+
+    if '--' in value:
+        errors.append("Value %s can not have two '--' in the name")
 
     if not ALLOWED_CHARS.match(value):
         errors.append("Value %s does not match %s" % (
