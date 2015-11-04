@@ -16,4 +16,4 @@ To override the oc path set the OC_PATH environment variable.
 Example
 ~~~~~~~
 
-OC_PATH=/tmp/my/special/oc ./container-ports-validate
+OC_PATH=/tmp/my/special/oc ./pre-upgrade-check
