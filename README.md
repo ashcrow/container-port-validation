@@ -1,12 +1,12 @@
-container-ports-validate
-========================
+pre-upgrade-check
+=================
 
 Validation script for container.ports.name
 
 Requirements
 ------------
 - Python 2
-- openshift (use of the oc command
+- openshift (use of the oc command)
 
 
 Setting a custom oc path
