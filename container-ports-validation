@@ -17,6 +17,8 @@ import re
 ALLOWED_LENGTH = 15
 # The valid structure of container.ports.name
 ALLOWED_CHARS = re.compile('^[a-z0-9][a-z0-9\-]*[a-z0-9]$')
+# look at OS_PATH for the full path. Default ot 'oc'
+OC_PATH = os.getenv('OC_PATH', 'oc')
 
 
 def validate(value):
@@ -51,9 +53,9 @@ def list_namespaces():
     """
     Returns a list of all namespaces
     """
-    response = subprocess.check_output(
-        'oc get namespaces -o template --template=\'{{range .items}}{{.metadata.name}}{{"\\n"}}{{end}}\'',
-        shell=True)
+    response = subprocess.check_output([
+        OC_PATH, 'get', 'namespaces', '-o template',
+        '--template=\'{{range .items}}{{.metadata.name}}{{"\\n"}}{{end}}\''])
     namespaces = response.split('\n')
     # Remove the last item if it is empty
     if namespaces[-1] == '':
@@ -69,8 +71,8 @@ def list_items(kind, namespace):
        - `kind`: Kind of item to access
        - `namespace`: Namespace to look in
     """
-    response = subprocess.check_output('oc get --namespace=%s -o json %s' % (
-        namespace, kind), shell=True)
+    response = subprocess.check_output([
+        OC_PATH, 'get', '--namespace=%s' % namespace, '-o json', kind])
     items = json.loads(response)
     return items.get("items", [])
 
@@ -124,12 +126,12 @@ def main():
     try:
         # the comma at the end suppresses the newline
         print("Checking for oc ..."),
-        # look at OS_PATH for the full path. Default ot 'oc'
-        has_oc = subprocess.check_output([
-            os.getenv('OS_PATH', 'oc'), 'whoami'])
+        has_oc = subprocess.check_output([OC_PATH, 'whoami'])
         print("found")
     except:
-        print('Can not find oc in the PATH. Exiting...')
+        print(
+            'Can not find oc (%s). Override the path with the '
+            'OC_PATH environment variable. Exiting...' % OC_PATH)
         raise SystemExit(1)
 
     # Where the magic happens
