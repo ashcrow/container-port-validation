@@ -17,6 +17,7 @@ import re
 ALLOWED_LENGTH = 15
 # The valid structure of container.ports.name
 ALLOWED_CHARS = re.compile('^[a-z0-9][a-z0-9\-]*[a-z0-9]$')
+AT_LEAST_ONE_LETTER = re.compile('[a-z]')
 # look at OS_PATH for the full path. Default ot 'oc'
 OC_PATH = os.getenv('OC_PATH', 'oc')
 
@@ -41,6 +42,11 @@ def validate(value):
     if '--' in value:
         return False
 
+    # We search since it can be anywhere
+    if not AT_LEAST_ONE_LETTER.search(value):
+        return False
+
+    # We match because it must start at the beginning
     if not ALLOWED_CHARS.match(value):
         return False
     return True
