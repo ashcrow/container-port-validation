@@ -90,16 +90,18 @@ def get(obj, *path):
     return o
 
 
-def pretty_print_errors(errors):
+def pretty_print_errors(errors, container_name):
     """
     Prints out results in human friendly way.
 
     :Parameters:
        - `errors`: List of errors
+       - `container_name`: Name of the container
     """
     if errors:
+        print("  - container: %s" % container_name)
         for error in errors:
-            print("  - %s" % error)
+            print("    - %s" % error)
 
 
 def print_check(kind, name, namespace):
@@ -136,7 +138,7 @@ def main():
                 for container in get(item, *path):
                     # for port in container["ports"]:
                     for port in get(container, "ports"):
-                        pretty_print_errors(validate(port["name"]))
+                        pretty_print_errors(validate(port["name"]), container["name"])
 
 
 if __name__ == '__main__':
