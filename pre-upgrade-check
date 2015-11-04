@@ -29,7 +29,7 @@ def validate(value):
     * must be less that 16 chars
     * at least one letter
     * only a-z0-9-
-    * hyphens can not be leading or trailing or next to eachother
+    * hyphens can not be leading or trailing or next to each other
 
     :Parameters:
        - `value`: Value to validate
