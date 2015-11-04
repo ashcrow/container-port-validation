@@ -129,7 +129,7 @@ def main():
                 ('pods', ("spec", "containers")),
                 ('deploymentconfigs', ("spec", "template", "spec", "containers"))]:
             for item in list_items(kind, namespace):
-                print_check(kind, rc["metadata"]["name"], namespace)
+                print_check(kind, item["metadata"]["name"], namespace)
                 for container in get(item, *path):
                     # for port in container["ports"]:
                     for port in get(container, "ports"):
