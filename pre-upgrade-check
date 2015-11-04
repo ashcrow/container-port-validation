@@ -111,7 +111,8 @@ At least one port name does not validate. Valid port names:
     * have at least one letter
     * only a-z0-9-
     * do not start or end with -
-    * Dashes may not be next to eachother ('--')""")
+    * Dashes may not be next to eachother ('--')
+""")
 
 
 def main():
