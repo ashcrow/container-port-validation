@@ -34,14 +34,14 @@ def validate(value):
     """
     errors = []
     if len(value) > ALLOWED_LENGTH:
-        errors.append("Value %s is too long. Max size is %s" % (
+        errors.append("Port %s is too long. Max size is %s" % (
             value, ALLOWED_LENGTH))
 
     if '--' in value:
-        errors.append("Value %s can not have two '--' in the name" % value)
+        errors.append("Port %s can not have two consecutive hyphens ('--') in the name" % value)
 
     if not ALLOWED_CHARS.match(value):
-        errors.append("Value %s does not match %s" % (
+        errors.append("Port %s does not match %s" % (
             value, ALLOWED_CHARS.pattern))
     return errors
 
@@ -113,7 +113,7 @@ def print_check(kind, name, namespace):
        - `name`: The name of the item being checked
        - `namespace`: The namespace the item resides in
     """
-    print("Checking %s %s in namespace %s" % (kind, name, namespace))
+    print("Checking %s/%s in namespace %s" % (kind, name, namespace))
 
 
 def main():
