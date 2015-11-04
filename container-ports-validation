@@ -79,11 +79,18 @@ def pretty_print_errors(namespace, kind, item_name, container_name, port_name, v
     Prints out results in human friendly way.
 
     :Parameters:
-       - `errors`: List of errors
-       - `container_name`: Name of the container
+       - `namespace`: Namespace of the resource
+       - `kind`: Kind of the resource
+       - `item_name`: Name of the resource
+       - `container_name`: Name of the container. May be "" when kind=Service.
+       - `port_name`: Name of the port
+       - `valid`: True if the port is valid
     """
     if not valid:
-        print("%s/%s -n %s (container %s, port %s)" % (kind, item_name, namespace, container_name, port_name))
+        if len(container_name) > 0:
+            print("%s/%s -n %s (container %s, port %s)" % (kind, item_name, namespace, container_name, port_name))
+        else:
+            print("%s/%s -n %s (port %s)" % (kind, item_name, namespace, port_name))
 
 
 def main():
@@ -120,7 +127,9 @@ def main():
         namespace = item["metadata"]["namespace"]
         item_name = item["metadata"]["name"]
         for port in get(item, "spec", "ports"):
-            port_name = port["targetName"]
+            port_name = port["targetPort"]
+            if type(port_name) == int:
+                continue
             pretty_print_errors(namespace, "services", item_name, "", port_name, validate(port_name))
 
 
