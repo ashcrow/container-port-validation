@@ -27,7 +27,7 @@ def validate(value):
 
     Rules of container.ports.name validation:
 
-    * must be less that 15 chars
+    * must be less that 16 chars
     * at least one letter
     * only a-z0-9-
     * hyphens can not be leading or trailing or next to eachother
@@ -35,44 +35,25 @@ def validate(value):
     :Parameters:
        - `value`: Value to validate
     """
-    errors = []
     if len(value) > ALLOWED_LENGTH:
-        errors.append("Port %s is too long. Max size is %s" % (
-            value, ALLOWED_LENGTH))
+        return False
 
     if '--' in value:
-        errors.append("Port %s can not have two consecutive hyphens ('--') in the name" % value)
+        return False
 
     if not ALLOWED_CHARS.match(value):
-        errors.append("Port %s does not match %s" % (
-            value, ALLOWED_CHARS.pattern))
-    return errors
+        return False
+    return True
 
 
-def list_namespaces():
-    """
-    Returns a list of all namespaces
-    """
-    response = subprocess.check_output([
-        OC_PATH, 'get', 'namespaces', '-o template',
-        '--template=\'{{range .items}}{{.metadata.name}}{{"\\n"}}{{end}}\''])
-    namespaces = response.split('\n')
-    # Remove the last item if it is empty
-    if namespaces[-1] == '':
-        namespaces = namespaces[:-1]
-    return namespaces
-
-
-def list_items(kind, namespace):
+def list_items(kind):
     """
     list_items returns a list of items from the api
 
     :Parameters:
        - `kind`: Kind of item to access
-       - `namespace`: Namespace to look in
     """
-    response = subprocess.check_output([
-        OC_PATH, 'get', '--namespace=%s' % namespace, '-o json', kind])
+    response = subprocess.check_output([OC_PATH, 'get', '--all-namespaces', '-o', 'json', kind])
     items = json.loads(response)
     return items.get("items", [])
 
@@ -93,7 +74,7 @@ def get(obj, *path):
     return o
 
 
-def pretty_print_errors(errors, container_name):
+def pretty_print_errors(namespace, kind, item_name, container_name, port_name, valid):
     """
     Prints out results in human friendly way.
 
@@ -101,22 +82,8 @@ def pretty_print_errors(errors, container_name):
        - `errors`: List of errors
        - `container_name`: Name of the container
     """
-    if errors:
-        print("  - container: %s" % container_name)
-        for error in errors:
-            print("    - %s" % error)
-
-
-def print_check(kind, name, namespace):
-    """
-    Prints the checking notice to the user.
-
-    :Parameters:
-       - `kind`: The kind of the item being checked
-       - `name`: The name of the item being checked
-       - `namespace`: The namespace the item resides in
-    """
-    print("Checking %s/%s in namespace %s" % (kind, name, namespace))
+    if not valid:
+        print("%s/%s -n %s (container %s, port %s)" % (kind, item_name, namespace, container_name, port_name))
 
 
 def main():
@@ -135,17 +102,18 @@ def main():
         raise SystemExit(1)
 
     # Where the magic happens
-    for namespace in list_namespaces():
-        for kind, path in [
-                ('replicationcontrollers', ("spec", "template", "spec", "containers")),
-                ('pods', ("spec", "containers")),
-                ('deploymentconfigs', ("spec", "template", "spec", "containers"))]:
-            for item in list_items(kind, namespace):
-                print_check(kind, item["metadata"]["name"], namespace)
-                for container in get(item, *path):
-                    # for port in container["ports"]:
-                    for port in get(container, "ports"):
-                        pretty_print_errors(validate(port["name"]), container["name"])
+    for kind, path in [
+            ('replicationcontrollers', ("spec", "template", "spec", "containers")),
+            ('pods', ("spec", "containers")),
+            ('deploymentconfigs', ("spec", "template", "spec", "containers"))]:
+        for item in list_items(kind):
+            namespace = item["metadata"]["namespace"]
+            item_name = item["metadata"]["name"]
+            for container in get(item, *path):
+                container_name = container["name"]
+                for port in get(container, "ports"):
+                    port_name = port["name"]
+                    pretty_print_errors(namespace, kind, item_name, container_name, port_name, validate(port_name))
 
 
 if __name__ == '__main__':
