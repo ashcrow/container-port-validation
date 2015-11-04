@@ -121,8 +121,10 @@ def main():
     main is the main entry point to this script
     """
     try:
-        print("Checking for oc ...")
-        has_oc = subprocess.check_call('oc whoami', shell=True)
+        # the comma at the end suppresses the newline
+        print("Checking for oc ..."),
+        has_oc = subprocess.check_output('oc whoami', shell=True)
+        print("found")
     except:
         print('Can not find oc in the PATH. Exiting...')
         raise SystemExit(1)
