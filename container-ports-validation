@@ -38,7 +38,7 @@ def validate(value):
             value, ALLOWED_LENGTH))
 
     if '--' in value:
-        errors.append("Value %s can not have two '--' in the name")
+        errors.append("Value %s can not have two '--' in the name" % value)
 
     if not ALLOWED_CHARS.match(value):
         errors.append("Value %s does not match %s" % (
