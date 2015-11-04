@@ -92,9 +92,26 @@ def pretty_print_errors(namespace, kind, item_name, container_name, port_name, v
     """
     if not valid:
         if len(container_name) > 0:
-            print("%s/%s -n %s (container %s, port %s)" % (kind, item_name, namespace, container_name, port_name))
+            print("Resource=%s/%s Namespace=%s Container=%s Port=%s" % (
+                kind, item_name, namespace, container_name, port_name))
         else:
-            print("%s/%s -n %s (port %s)" % (kind, item_name, namespace, port_name))
+            print("Resource=%s/%s Namespace=%s Port=%s" % (
+                kind, item_name, namespace, port_name))
+
+
+def print_validation_header():
+    """
+    Prints the error header. Should run on the first error to avoid
+    overwhelming the user.
+    """
+    print("""\
+At least one port name does not validate. Valid port names:
+
+    * must be less that 16 chars
+    * have at least one letter
+    * only a-z0-9-
+    * do not start or end with -
+    * Dashes may not be next to eachother ('--')""")
 
 
 def main():
@@ -113,6 +130,7 @@ def main():
         raise SystemExit(1)
 
     # Where the magic happens
+    first_error = True
     for kind, path in [
             ('replicationcontrollers', ("spec", "template", "spec", "containers")),
             ('pods', ("spec", "containers")),
@@ -124,7 +142,13 @@ def main():
                 container_name = container["name"]
                 for port in get(container, "ports"):
                     port_name = port["name"]
-                    pretty_print_errors(namespace, kind, item_name, container_name, port_name, validate(port_name))
+                    errors = validate(port_name)
+                    if errors and first_error:
+                        first_error = False
+                        print_validation_header()
+                    pretty_print_errors(
+                        namespace, kind, item_name,
+                        container_name, port_name, errors)
 
     # Services follow a different flow
     for item in list_items('services'):
@@ -134,7 +158,12 @@ def main():
             port_name = port["targetPort"]
             if type(port_name) == int:
                 continue
-            pretty_print_errors(namespace, "services", item_name, "", port_name, validate(port_name))
+            errors = validate(port_name)
+            if errors and first_error:
+                first_error = False
+                print_validation_header()
+            pretty_print_errors(
+                namespace, "services", item_name, "", port_name, errors)
 
 
 if __name__ == '__main__':
