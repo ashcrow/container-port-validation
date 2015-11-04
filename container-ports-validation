@@ -115,6 +115,16 @@ def main():
                     port_name = port["name"]
                     pretty_print_errors(namespace, kind, item_name, container_name, port_name, validate(port_name))
 
+    # Services follow a different flow
+    for item in list_items('services'):
+        # Namespace and name are not required for services and may be empty
+        namespace = item["metadata"].get("namespace", "")
+        item_name = item["metadata"].get("name", "")
+        for port in get(item, "ports"):
+            for port in get(container, "ports"):
+                port_name = port["targetName"]
+                pretty_print_errors(namespace, "services", item_name, "", port_name, validate(port_name))
+
 
 if __name__ == '__main__':
     main()
